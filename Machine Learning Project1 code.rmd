@@ -1,0 +1,256 @@
+---
+title: "PROJECT 1 REPORT"
+author:
+- Itunu Olufemi
+- Abdullah Akinde
+- Idris Ajibade
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output:
+  pdf_document:
+    fig_caption: yes
+    keep_tex: yes
+    latex_engine: pdflatex
+    number_sections: yes
+    toc: yes
+    toc_depth: 4
+  word_document:
+    toc: yes
+    toc_depth: '4'
+header-includes:
+- \usepackage{amsmath}
+- \usepackage{amssymb}
+- \usepackage{amsfonts}
+- \usepackage{subfig}
+- \usepackage{graphicx}
+- \usepackage{amsthm}
+- \usepackage{fancyhdr}
+- \pagestyle{fancy}
+- \fancyhf{}
+- \rhead{MATH 5310 -- Machine Learning}
+- \lhead{Project I}
+- \cfoot{\thepage}
+- \usepackage{algorithm}
+- \usepackage[noend]{algpseudocode}
+geometry: margin=1in
+spacing: single
+fontsize: 11pt
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+\section{Problem 1 Data Scraping}
+
+For this problem, we used the downloaded data set from D2L as the URL method returned an "HTTP status was 403 Forbidden" error.
+```{r, message=F, warning=F}
+#load in the data set
+data1 <- read.csv("~/APSUGradSchool/_Fall 2021/MATH 5310/week 4/_Project 1/weather-2021.csv", 
+                 check.names = F)
+
+dim(data1)
+```
+The dimension of the data set is 255 rows by 22 columns.
+
+```{r, message=F, warning=F}
+head(data1) 
+```
+The above shows the first 6 rows of the data set.
+
+```{r, message=F, warning=F}
+tail(data1) 
+```
+The above represents the last 6 rows of the data set.
+
+\section{Problem 2 Data Cleaning and Preparation}
+
+## Problem 2A remove the "Time of maximum wind gust" in the 10th column
+```{r, message=F, warning=F}
+
+#remove a second columns of all the rows  [r x c]
+data1 <- data1[, -c(10)]
+
+dim(data1)
+
+```
+We have successfully removed the 10th column, our new dimension is now 255 by 21.
+
+## Problem 2B rename the dataset
+```{r, message=F, warning=F}
+
+names(data1) <- c("Month", "Date", "MinTemp", "MaxTemp", "Rainfall",
+                "Evaporation", "Sunshine", "WindGustDir", "WindGustSpeed",
+                "Temp9am", "Humidity9am", "Cloud9am", "WindDir9am",
+                "WindSpeed9am", "Pressure9am", "Temp3pm", "Humidity3pm",
+                "Cloud3pm", "WindDir3pm", "WindSpeed3pm", "Pressure3pm")
+
+```
+
+## Problem 2C print out unique values
+```{r, message=F, warning=F}
+
+data <- data1
+vnames <- colnames(data)
+n <- nrow(data)
+out <- NULL
+for (j in 1:ncol(data)){
+  vname <- colnames(data)[j]
+  x <- as.vector(data[,j])
+  n1 <- sum(is.na(x), na.rm=TRUE)  # NA
+  n2 <- sum(x=="NA", na.rm=TRUE) # "NA"
+  n3 <- sum(x==" ", na.rm=TRUE)  # missing
+  nmiss <- n1 + n2 + n3
+  nmiss <- sum(is.na(x))
+  ncomplete <- n-nmiss
+  out <- rbind(out, c(col.num=j, v.name=vname, mode=mode(x), n.level=length(unique(x)),
+                      ncom=ncomplete, nmiss= nmiss, miss.prop=nmiss/n))
+}
+out <- as.data.frame(out) 
+row.names(out) <- NULL
+out
+
+```
+'
+There are 21 variables with their respective datatypes for 255 values. This includes:
+
+ 1. Month       : which consists of character datatype and have 9 unique values.
+ 2. Date        : which consists of character datatype and have 255 unique values. This is because each date is unique
+ 3. MinTemp     : which consists of numeric datatype and have 152 unique values.
+ 4. MaxTemp     : which consists of numeric datatype and have 156 unique values.
+ 5. Rainfall    : which consists of numeric datatype and have 46 unique values.
+ 6. Evaporation : which consists of logical datatype and have 1 unique values.
+ 7. Sunshine    : which consists of logical datatype and have 1 unique values.
+ 8. WindGustDir : which consists of character datatype and have 17 unique values.
+ 9. WindGustSpeed: which consists of integer datatype and have 33 unique values
+ 10. Temp9am      : which consists of numeric datatype and have 146 unique values
+ 11. Humidity9am  : which consists of integer datatype and have 56 unique values
+ 12. Cloud9am     : which consists of integer datatype and have 9 unique values
+ 13. WindDir9am   : which consists of character datatype and have 17 unique values.
+ 14. WindSpeed9am : which consists of character datatype and have 23 unique values.This should be integer
+ 15. Pressure9am  : which consists of numeric datatype and have 173 unique values
+ 16. Temp3pm      : which consists of numeric datatype and have 152 unique values
+ 17. Humidity3pm  : which consists of integer datatype and have 74 unique values
+ 18. Cloud3pm     : which consists of integer datatype and have 9 unique values
+ 19. WindDir3pm   : which consists of character datatype and have 17 unique values
+ 20. WindSpeed3pm : which consists of character datatype and have 19 unique values. This should be integer
+ 21. Pressure3pm  : which consists of numeric datatype and have 174 unique values
+
+## Problem 2D Show the frequency table of each value, as if categorical
+```{r, message=F, warning=F}
+#use apply column by column
+data1 <- data
+apply(data1, 2, FUN = function(X){table(X, useNA="ifany")})
+```
+We identified 1 suspicious variables apart from "WindSpeed9am". This was "WindSpeed3pm" which also had 3 entries with name "Calm"
+
+## Problem 2E change "Calm" to 0, then format to numeric
+```{r, message=F, warning=F}
+#fixing Windspeed9am 
+data1[data1$WindSpeed9am == "Calm", ]$WindSpeed9am <- 0
+data1$WindSpeed9am <- as.numeric(data1$WindSpeed9am)
+```
+
+```{r, message=F, warning=F}
+data1$WindSpeed9am
+```
+
+
+```{r, message=F, warning=F}
+#fixing Windspeed3pm
+
+data1[!is.na(data1$WindSpeed3pm == "Calm"), ]$WindSpeed3pm <- 0
+data1$WindSpeed3pm <- as.numeric(data1$WindSpeed3pm)
+```
+```{r, message=F, warning=F}
+data1$WindSpeed3pm 
+```
+
+```{r, message=F, warning=F}
+data1$RainToday <- ifelse(data1$Rainfall > 1, 1, 0)
+data1$RainTomorrow <- c(data1$RainToday[2:nrow(data1)], NA)
+```
+
+## Problem 2F saving the cleaned dataset
+```{r, message=F, warning=F}
+#save to csv 
+#?write.csv()
+write.csv(data1, file="C:\\Users\\john\\Documents\\APSUGradSchool\\_Fall 2021\\MATH 5310\\_project 1\\cleaned-data.csv", row.names =FALSE)
+```
+
+\section{Problem 3 Exploratory Data Analysis}
+```{r, message=F, warning=F}
+set.seed(500) #reproducibility
+tab <- table(data1$Month, data1$WindGustDir, useNA="no");
+tab
+
+```
+We noticed some strong NNW and NW Winds for June, July and Aug. This means some form of association. 
+
+Null Hypothesis H0: is that there is no association between Month and WindGustDir.
+Alt Hypothesis H1: is that there is a association between Month and WindGustDir.
+
+Assume our confidence level, alpha to be 0.01
+```{r, message=F, warning=F}
+fisher.test(tab, simulate.p.value =TRUE)
+
+```
+Therefore since p-value is less than 0.1, we reject the Null Hypothesis HO and conclude that there is some form of association between Months and the WindGustDir.
+
+```{r, message=F, warning=F}
+set.seed(500) #reproducibility
+tab <- table(data1$Month, data1$WindGustSpeed, useNA="no");
+tab
+
+```
+We noticed no form of association between Month and WindGustSpeed. 
+
+Null Hypothesis H0: is that there is no association between Month and WindGustSpeed.
+Alt Hypothesis H1: is that there is a association between Month and WindGustSpeed.
+
+Assume our confidence level, alpha to be 0.01
+```{r, message=F, warning=F}
+chisq.test(tab, simulate.p.value =TRUE)
+
+```
+
+Therefore since p-value is greater than 0.1, we accept the Null Hypothesis HO and conclude that there is no form of association between Months and the WindGustSpeed.
+
+```{r, message=F, warning=F}
+set.seed(500) #reproducibility
+hist(data1$MinTemp, useNA="no")
+
+```
+
+We noticed the histogram of Minimum Temperature does not follow a normal distribution 
+
+Null Hypothesis H0: is that there is no association between RainToday and MinTemp.
+Alt Hypothesis H1: is that there is a association between RainToday and MinTemp.
+
+Assume our confidence level, alpha to be 0.00001
+```{r, message=F, warning=F}
+wilcox.test(data1$MinTemp~data1$RainToday, data=data1, alternative = "two.sided")
+#chisq.test(tab, simulate.p.value =TRUE)
+
+```
+
+Therefore since p-value is greater than 0.00001, we accept the Null Hypothesis HO and conclude that there is no association between RainToday and MinTemp.
+
+```{r, message=F, warning=F}
+set.seed(500) #reproducibility
+hist(data1$Pressure3pm, useNA="no")
+
+```
+We noticed the histogram of Minimum Temperature nearly follow a normal distribution 
+
+Null Hypothesis H0: is that there is no association between RainToday and Pressure at 3pm.
+Alt Hypothesis H1: is that there is a association between RainToday and Pressure at 3pm.
+
+Assume our confidence level, alpha to be 0.01
+```{r, message=F, warning=F}
+t.test(data1$Pressure3pm~data1$RainToday, data=data1, alternative = "two.sided")
+
+
+```
+Therefore since p-value is lesser than 0.00001, we reject the Null Hypothesis HO and conclude that there is some form of association between RainToday and Pressure at 3pm.
